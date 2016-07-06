@@ -22,10 +22,7 @@ def fix_url(url):
         url = url.replace('///', '//')
     return url
 
-def push(title, message, image=None, landing=None):
-    if (image):
-        image = fix_url(image)
-        b.push_file(file_url=image, file_name='', file_type="image/jpeg")
+def push(title, message, landing=None):
     if (landing):
         landing = fix_url(landing)
     message += '\n' + landing
@@ -47,13 +44,14 @@ else:
 
 for noti in reversed(notis['notifications']):
     noti = json.loads(noti)
-    if noti['itemId'] in PUSHED:
+    item_id = noti['itemId']
+    if item_id in PUSHED:
         continue
     title, message = noti['message'].split('</strong>', 1)
     title = strip_html(title)
     message = strip_html(message)
-    push(title, message, noti.get('imageUrl'), noti.get('landingUrl'))
-    PUSHED.append(noti['itemId'])
+    push(title, message, noti.get('landingUrl'))
+    PUSHED.append(item_id)
 
 with open('.pushed', 'w') as w:
     w.write('\n'.join(PUSHED[-100:]))
