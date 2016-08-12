@@ -17,6 +17,8 @@ def strip_html(m):
     return HTML_PARSER.unescape(TAG_PATTERN.sub('', m))
 
 def fix_url(url):
+    if (url[:13] == '/notification'):
+        url = 'http://ridibooks.com' + url
     if (url[0] == '/'):
         url = 'http://' + url
         url = url.replace('///', '//')
