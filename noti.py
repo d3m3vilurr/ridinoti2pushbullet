@@ -55,7 +55,10 @@ for noti in reversed(notis['notifications']):
     item_id = noti['itemId']
     if item_id in PUSHED:
         continue
-    title, message = noti['message'].split('</strong>', 1)
+    _ = noti['message'].split('</strong>', 1)
+    if len(_) < 2:
+            _ = ('', _[0])
+    title, message = _
     title = strip_html(title)
     message = strip_html(message)
     push(title, message, noti.get('landingUrl'))
