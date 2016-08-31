@@ -6,6 +6,11 @@ from HTMLParser import HTMLParser
 from pushbullet import PushBullet
 import config as CONFIG
 
+HOSTNAME = 'ridibooks.com'
+AUTH_SERVER = 'https://' + HOSTNAME
+MAIN_SERVER = 'http://' + HOSTNAME
+API_SERVER = 'http://api.' + HOSTNAME
+
 TAG_PATTERN = re.compile(r'<[^>]+>')
 HTML_PARSER = HTMLParser()
 
@@ -17,10 +22,11 @@ def strip_html(m):
     return HTML_PARSER.unescape(TAG_PATTERN.sub('', m))
 
 def fix_url(url):
-    if (url[:13] == '/notification'):
-        url = 'http://ridibooks.com' + url
     if (url[0] == '/'):
-        url = 'http://' + url
+        if (url[1:20] == HOSTNAME):
+            url = 'http:/' + url
+        else:
+            url = MAIN_SERVER + url
         url = url.replace('///', '//')
     return url
 
@@ -31,11 +37,11 @@ def push(title, message, landing=None):
     b.push_note(title, message)
 
 session = requests.Session()
-session.post('https://ridibooks.com/account/login',
+session.post(AUTH_SERVER + '/account/login',
              dict(cmd='login',
                   user_id=CONFIG.RIDIBOOKS_ID,
                   passwd=CONFIG.RIDIBOOKS_PWD))
-notis = session.get('http://api.ridibooks.com/v0/notifications?limit=100')
+notis = session.get(API_SERVER + '/v0/notifications?limit=100')
 notis = json.loads(notis.text)
 
 if not os.path.exists('.pushed'):
