@@ -9,7 +9,7 @@ import config as CONFIG
 HOSTNAME = 'ridibooks.com'
 AUTH_SERVER = 'https://' + HOSTNAME
 MAIN_SERVER = 'http://' + HOSTNAME
-API_SERVER = 'http://api.' + HOSTNAME
+API_SERVER = 'http://store-api.' + HOSTNAME
 
 TAG_PATTERN = re.compile(r'<[^>]+>')
 HTML_PARSER = HTMLParser()
