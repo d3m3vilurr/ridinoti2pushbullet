@@ -65,4 +65,4 @@ for noti in reversed(notis['notifications']):
     PUSHED.append(item_id)
 
 with open('.pushed', 'w') as w:
-    w.write('\n'.join(PUSHED[-100:]))
+    w.write('\n'.join(PUSHED[-200:]))
