@@ -9,8 +9,9 @@ import config as CONFIG
 HOSTNAME = 'ridibooks.com'
 AUTH_SERVER = 'https://' + HOSTNAME
 MAIN_SERVER = 'http://' + HOSTNAME
-API_SERVER = 'https://store-api.' + HOSTNAME
+API_SERVER = 'https://api.' + HOSTNAME
 
+ACCESS_TOKEN_PATTERN = re.compile(r".+apiToken: '([^']+)'")
 TAG_PATTERN = re.compile(r'<[^>]+>')
 HTML_PARSER = HTMLParser()
 
@@ -41,7 +42,21 @@ session.post(AUTH_SERVER + '/account/login',
              dict(cmd='login',
                   user_id=CONFIG.RIDIBOOKS_ID,
                   passwd=CONFIG.RIDIBOOKS_PWD))
-notis = session.get(API_SERVER + '/v0/notifications?limit=100')
+
+after_login = session.get(AUTH_SERVER).text.replace('\n', '')
+m = ACCESS_TOKEN_PATTERN.match(after_login)
+if not m:
+    with open('dump.html', 'w') as w:
+        w.write(after_login.encode('utf8'))
+    raise SystemExit
+
+access_token = 'Bearer ' + m.group(1)
+
+headers = dict(
+    authorization=access_token,
+)
+
+notis = session.get(API_SERVER + '/notifications?limit=100', headers=headers)
 notis = json.loads(notis.text)
 
 if not os.path.exists('.pushed'):
