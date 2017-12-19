@@ -2,7 +2,7 @@ import os
 import requests
 import json
 import re
-from HTMLParser import HTMLParser
+from html.parser import HTMLParser
 from pushbullet import PushBullet
 import config as CONFIG
 
@@ -63,7 +63,7 @@ if not os.path.exists('.pushed'):
     PUSHED = []
 else:
     with open('.pushed', 'r') as r:
-        PUSHED = map(lambda x: x.strip(), r.readlines())
+        PUSHED = [x.strip() for x in r.readlines()]
 
 for noti in reversed(notis['notifications']):
     noti = json.loads(noti)
