@@ -8,10 +8,12 @@ import config as CONFIG
 
 HOSTNAME = 'ridibooks.com'
 AUTH_SERVER = 'https://' + HOSTNAME
-MAIN_SERVER = 'http://' + HOSTNAME
+MAIN_SERVER = 'https://' + HOSTNAME
 API_SERVER = 'https://api.' + HOSTNAME
 
 ACCESS_TOKEN_PATTERN = re.compile(r".+apiToken: '([^']+)'")
+NOTI_URL_PATTERN = re.compile(r".+notificationApiUrl: '([^']+)'")
+
 TAG_PATTERN = re.compile(r'<[^>]+>')
 HTML_PARSER = HTMLParser()
 
@@ -49,15 +51,21 @@ if not m:
     with open('dump.html', 'w') as w:
         w.write(after_login.encode('utf8'))
     raise SystemExit
-
 access_token = 'Bearer ' + m.group(1)
+
+m = NOTI_URL_PATTERN.match(after_login)
+if not m:
+    with open('dump.html', 'w') as w:
+        w.write(after_login.encode('utf8'))
+    raise SystemExit
+noti_url = m.group(1)
 
 headers = dict(
     authorization=access_token,
 )
 
-notis = session.get(API_SERVER + '/notifications?limit=100', headers=headers)
-notis = json.loads(notis.text)
+notis = session.get(noti_url + '/v0/notifications?limit=100', headers=headers)
+notis = notis.json()
 
 if not os.path.exists('.pushed'):
     PUSHED = []
@@ -66,6 +74,8 @@ else:
         PUSHED = [x.strip() for x in r.readlines()]
 
 for noti in reversed(notis['notifications']):
+    if not noti:
+        continue
     noti = json.loads(noti)
     item_id = noti['itemId']
     if item_id in PUSHED:
