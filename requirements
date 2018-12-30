@@ -1,2 +1,4 @@
 git+https://github.com/randomchars/pushbullet.py@90a0845
 requests
+pyyaml
+markdown

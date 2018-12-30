@@ -1,0 +1,12 @@
+ridibooks:
+  id: SOMEID
+  password: SOMEPWD
+
+posts:
+  -
+    type: pushbullet
+    api: a.bcdefghijklmnopqrstuvwxyz
+    #channel: CHANNEL_TAG
+  -
+    type: matrix_webhook
+    url: http://webhook.local

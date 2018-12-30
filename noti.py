@@ -4,7 +4,7 @@ import json
 import re
 from html.parser import HTMLParser
 from pushbullet import PushBullet
-import config as CONFIG
+import yaml
 
 HOSTNAME = 'ridibooks.com'
 AUTH_SERVER = 'https://' + HOSTNAME
@@ -17,12 +17,25 @@ NOTI_URL_PATTERN = re.compile(r".+notificationApiUrl: '([^']+)'")
 TAG_PATTERN = re.compile(r'<[^>]+>')
 HTML_PARSER = HTMLParser()
 
-b = PushBullet(CONFIG.PUSHBULLET_API)
-if (CONFIG.PUSHBULLET_CHANNEL):
-    b = b.get_channel(CONFIG.PUSHBULLET_CHANNEL)
+with open('config.yml') as f:
+    CONFIG = yaml.safe_load(f.read())
+
+RIDIBOOKS_ID = CONFIG['ridibooks']['id']
+RIDIBOOKS_PWD = CONFIG['ridibooks']['password']
+
+senders = []
+
+for x in CONFIG.get('posts', ()):
+    post_type = x.get('type')
+    try:
+        module = __import__('posts.{}'.format(post_type))
+        module = getattr(module, post_type)
+        senders.append(module.make_sender(x))
+    except ModuleNotFoundError:
+        print('not support {} yet'.format(post_type))
 
 def strip_html(m):
-    return HTML_PARSER.unescape(TAG_PATTERN.sub('', m))
+    return HTML_PARSER.unescape(TAG_PATTERN.sub('', m)).strip()
 
 def fix_url(url):
     if (url[0] == '/'):
@@ -36,14 +49,13 @@ def fix_url(url):
 def push(title, message, landing=None):
     if (landing):
         landing = fix_url(landing)
-    message += '\n' + landing
-    b.push_note(title, message)
+    #message += '\n' + landing
+    for sender in senders:
+        sender.post(title, message, landing)
 
 session = requests.Session()
 session.post(AUTH_SERVER + '/account/login',
-             dict(cmd='login',
-                  user_id=CONFIG.RIDIBOOKS_ID,
-                  passwd=CONFIG.RIDIBOOKS_PWD))
+             dict(cmd='login', user_id=RIDIBOOKS_ID, passwd=RIDIBOOKS_PWD))
 
 after_login = session.get(AUTH_SERVER).text.replace('\n', '')
 m = ACCESS_TOKEN_PATTERN.match(after_login)
