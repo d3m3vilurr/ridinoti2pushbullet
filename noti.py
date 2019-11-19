@@ -76,7 +76,11 @@ headers = dict(
     authorization=access_token,
 )
 
-notis = session.get(noti_url + '/v0/notifications?limit=100', headers=headers)
+params = dict(
+    limit=100,
+)
+
+notis = session.get(noti_url, headers=headers, params=params)
 notis = notis.json()
 
 if not os.path.exists('.pushed'):
@@ -88,7 +92,6 @@ else:
 for noti in reversed(notis['notifications']):
     if not noti:
         continue
-    noti = json.loads(noti)
     item_id = noti['itemId']
     if item_id in PUSHED:
         continue
