@@ -9,7 +9,10 @@ import yaml
 HOSTNAME = 'ridibooks.com'
 AUTH_SERVER = 'https://' + HOSTNAME
 MAIN_SERVER = 'https://' + HOSTNAME
-API_SERVER = 'https://api.' + HOSTNAME
+NOTIFICATION_PAGE_URL = MAIN_SERVER + '/notification/'
+API_SERVER = 'https://store-api.' + HOSTNAME
+# TODO use selenium
+TOKEN_URL = API_SERVER + '/users/me/notification-token/'
 
 ACCESS_TOKEN_PATTERN = re.compile(r".+apiToken: '([^']+)'")
 NOTI_URL_PATTERN = re.compile(r".+notificationApiUrl: '([^']+)'")
@@ -57,24 +60,32 @@ session = requests.Session()
 session.post(AUTH_SERVER + '/account/login',
              dict(cmd='login', user_id=RIDIBOOKS_ID, passwd=RIDIBOOKS_PWD))
 
-after_login = session.get(AUTH_SERVER).text.replace('\n', '')
+# it requires right cloudflare token
+#noti_token = session.get(TOKEN_URL)
+#print(noti_token)
+
+after_login = session.get(NOTIFICATION_PAGE_URL).text.replace('\n', '')
 m = ACCESS_TOKEN_PATTERN.match(after_login)
+
 if not m:
     with open('dump.html', 'w') as w:
-        w.write(after_login.encode('utf8'))
+        w.write(after_login)
     raise SystemExit
 access_token = 'Bearer ' + m.group(1)
 
 m = NOTI_URL_PATTERN.match(after_login)
 if not m:
     with open('dump.html', 'w') as w:
-        w.write(after_login.encode('utf8'))
+        w.write(after_login)
     raise SystemExit
 noti_url = m.group(1)
 
 headers = dict(
     authorization=access_token,
 )
+
+#token = session.get(TOKEN_URL, headers=headers)
+#print(token)
 
 params = dict(
     limit=100,
