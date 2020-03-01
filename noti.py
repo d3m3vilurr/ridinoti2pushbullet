@@ -58,7 +58,8 @@ def push(title, message, landing=None):
 
 session = requests.Session()
 session.post(AUTH_SERVER + '/account/login',
-             dict(cmd='login', user_id=RIDIBOOKS_ID, passwd=RIDIBOOKS_PWD))
+             dict(cmd='login', user_id=RIDIBOOKS_ID, password=RIDIBOOKS_PWD,
+                  return_url=MAIN_SERVER))
 
 # it requires right cloudflare token
 #noti_token = session.get(TOKEN_URL)
