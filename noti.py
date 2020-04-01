@@ -1,10 +1,13 @@
 import os
-import requests
+from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.common.keys import Keys
 import json
 import re
 from html.parser import HTMLParser
 from pushbullet import PushBullet
 import yaml
+import time
 
 HOSTNAME = 'ridibooks.com'
 AUTH_SERVER = 'https://' + HOSTNAME
@@ -56,44 +59,63 @@ def push(title, message, landing=None):
     for sender in senders:
         sender.post(title, message, landing)
 
-session = requests.Session()
-session.post(AUTH_SERVER + '/account/login',
-             dict(cmd='login', user_id=RIDIBOOKS_ID, password=RIDIBOOKS_PWD,
-                  return_url=MAIN_SERVER))
+def fetch_notifications():
+    result = []
 
-# it requires right cloudflare token
-#noti_token = session.get(TOKEN_URL)
-#print(noti_token)
+    firefox_options = Options()
+    firefox_options.add_argument("--headless")
+    driver = webdriver.Firefox(options=firefox_options)
 
-after_login = session.get(NOTIFICATION_PAGE_URL).text.replace('\n', '')
-m = ACCESS_TOKEN_PATTERN.match(after_login)
+    try:
+        driver .implicitly_wait(20)
 
-if not m:
-    with open('dump.html', 'w') as w:
-        w.write(after_login)
-    raise SystemExit
-access_token = 'Bearer ' + m.group(1)
+        driver.get(NOTIFICATION_PAGE_URL)
+        driver .implicitly_wait(10)
+        print(driver.current_url)
+        driver.find_element_by_id('login_id').send_keys(RIDIBOOKS_ID)
+        driver.find_element_by_id('login_pw').send_keys(RIDIBOOKS_PWD)
+        # tricky; use the return in the password input form
+        driver.find_element_by_id('login_pw').send_keys(Keys.ENTER)
+        # or use the javascript action
+        #driver.execute_script('$("button.login-button.main").click();')
 
-m = NOTI_URL_PATTERN.match(after_login)
-if not m:
-    with open('dump.html', 'w') as w:
-        w.write(after_login)
-    raise SystemExit
-noti_url = m.group(1)
+        print('[+] wait login')
+        # FIXME use unti
+        for x in range(30):
+            time.sleep(1)
+            if driver.current_url == NOTIFICATION_PAGE_URL:
+                break
+        else:
+            print("[!] login failed")
+            raise SystemExit
+        print('[+] authorized')
 
-headers = dict(
-    authorization=access_token,
-)
+        print('[+] wait loading notifications')
+        # FIXME use unti
+        for x in range(30):
+            items = driver.find_elements_by_css_selector('main li')
+            if len(items):
+                break
+            time.sleep(1)
+        else:
+            print('[!] loading notification failed')
+            raise SystemExit
 
-#token = session.get(TOKEN_URL, headers=headers)
-#print(token)
+        print('[+] loaded: {} notis'.format(len(items)))
 
-params = dict(
-    limit=100,
-)
-
-notis = session.get(noti_url, headers=headers, params=params)
-notis = notis.json()
+        for item in items:
+            try:
+                data_id = item.find_element_by_css_selector('div.notification-item').get_attribute('data-id')
+                url = item.find_element_by_tag_name('a').get_attribute('href')
+                text = item.find_element_by_tag_name('p').get_attribute('innerHTML')
+                result.append(dict(data_id=data_id, url=url, message=text))
+            except:
+                # FIXME
+                pass
+    except:
+        # anyway we must close the process
+        driver.quit()
+    return result
 
 if not os.path.exists('.pushed'):
     PUSHED = []
@@ -101,10 +123,10 @@ else:
     with open('.pushed', 'r') as r:
         PUSHED = [x.strip() for x in r.readlines()]
 
-for noti in reversed(notis['notifications']):
+for noti in reversed(fetch_notifications()):
     if not noti:
         continue
-    item_id = noti['itemId']
+    item_id = noti['data_id']
     if item_id in PUSHED:
         continue
     _ = noti['message'].split('</strong>', 1)
@@ -113,7 +135,7 @@ for noti in reversed(notis['notifications']):
     title, message = _
     title = strip_html(title)
     message = strip_html(message)
-    push(title, message, noti.get('landingUrl'))
+    push(title, message, noti.get('url'))
     PUSHED.append(item_id)
 
 with open('.pushed', 'w') as w:
