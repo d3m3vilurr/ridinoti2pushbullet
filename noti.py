@@ -13,6 +13,7 @@ HOSTNAME = 'ridibooks.com'
 AUTH_SERVER = 'https://' + HOSTNAME
 MAIN_SERVER = 'https://' + HOSTNAME
 NOTIFICATION_PAGE_URL = MAIN_SERVER + '/notification/'
+CHANGE_PWD_PAGE_URL = MAIN_SERVER + '/account/change-password'
 API_SERVER = 'https://store-api.' + HOSTNAME
 # TODO use selenium
 TOKEN_URL = API_SERVER + '/users/me/notification-token/'
@@ -83,6 +84,10 @@ def fetch_notifications():
         # FIXME use unti
         for x in range(30):
             time.sleep(1)
+            # skip the change pwd page
+            if CHANGE_PWD_PAGE_URL in driver.current_url:
+                driver.get(NOTIFICATION_PAGE_URL)
+                continue
             if driver.current_url == NOTIFICATION_PAGE_URL:
                 break
         else:
