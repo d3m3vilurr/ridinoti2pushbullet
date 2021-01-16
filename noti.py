@@ -4,6 +4,7 @@ from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.keys import Keys
 import json
 import re
+import html
 from html.parser import HTMLParser
 from pushbullet import PushBullet
 import yaml
@@ -42,7 +43,7 @@ for x in CONFIG.get('posts', ()):
         print('not support {} yet'.format(post_type))
 
 def strip_html(m):
-    return HTML_PARSER.unescape(TAG_PATTERN.sub('', m)).strip()
+    return html.unescape(TAG_PATTERN.sub('', m)).strip()
 
 def fix_url(url):
     if (url[0] == '/'):
