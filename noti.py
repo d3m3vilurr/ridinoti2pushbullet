@@ -5,6 +5,7 @@ from selenium.webdriver.common.keys import Keys
 import json
 import re
 import html
+import hashlib
 from html.parser import HTMLParser
 from pushbullet import PushBullet
 import yaml
@@ -99,7 +100,15 @@ def fetch_notifications():
         print('[+] wait loading notifications')
         # FIXME use unti
         for x in range(30):
-            items = driver.find_elements_by_css_selector('section li')
+            sections = driver.find_elements_by_tag_name('section')
+            sections = [
+                section
+                for section in sections
+                if not(len(section.find_elements_by_tag_name('footer')))
+            ]
+            if len(sections):
+                section = sections[0]
+                items = section.find_elements_by_css_selector('li')
             if len(items):
                 break
             time.sleep(1)
@@ -111,8 +120,8 @@ def fetch_notifications():
 
         for item in items:
             try:
-                data_id = item.find_element_by_css_selector('div.notification-item').get_attribute('data-id')
                 url = item.find_element_by_tag_name('a').get_attribute('href')
+                data_id = hashlib.sha1(url.encode()).hexdigest()
                 text = item.find_element_by_tag_name('p').get_attribute('innerHTML')
                 result.append(dict(data_id=data_id, url=url, message=text))
             except:
