@@ -60,7 +60,11 @@ def push(title, message, landing=None):
         landing = fix_url(landing)
     #message += '\n' + landing
     for sender in senders:
-        sender.post(title, message, landing)
+        try:
+            sender.post(title, message, landing)
+        except:
+            # TODO pushbullet has ratelimit
+            pass
 
 def fetch_notifications():
     result = []
