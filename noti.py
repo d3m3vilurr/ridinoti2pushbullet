@@ -13,7 +13,7 @@ import time
 HOSTNAME = 'ridibooks.com'
 AUTH_SERVER = 'https://' + HOSTNAME
 MAIN_SERVER = 'https://' + HOSTNAME
-NOTIFICATION_PAGE_URL = MAIN_SERVER + '/notification/'
+NOTIFICATION_PAGE_URL = MAIN_SERVER + '/notification'
 CHANGE_PWD_PAGE_URL = MAIN_SERVER + '/account/change-password'
 API_SERVER = 'https://store-api.' + HOSTNAME
 # TODO use selenium
@@ -99,7 +99,7 @@ def fetch_notifications():
         print('[+] wait loading notifications')
         # FIXME use unti
         for x in range(30):
-            items = driver.find_elements_by_css_selector('main li')
+            items = driver.find_elements_by_css_selector('section li')
             if len(items):
                 break
             time.sleep(1)
