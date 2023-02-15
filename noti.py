@@ -2,6 +2,7 @@ import os
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
 import json
 import re
 import html
@@ -79,10 +80,10 @@ def fetch_notifications():
         driver.get(NOTIFICATION_PAGE_URL)
         driver .implicitly_wait(10)
         print(driver.current_url)
-        driver.find_element_by_id('login_id').send_keys(RIDIBOOKS_ID)
-        driver.find_element_by_id('login_pw').send_keys(RIDIBOOKS_PWD)
+        driver.find_element(By.CSS_SELECTOR, 'input[placeholder="아이디"]').send_keys(RIDIBOOKS_ID)
+        driver.find_element(By.CSS_SELECTOR, 'input[placeholder="비밀번호"]').send_keys(RIDIBOOKS_PWD)
         # tricky; use the return in the password input form
-        driver.find_element_by_id('login_pw').send_keys(Keys.ENTER)
+        driver.find_element(By.CSS_SELECTOR, 'input[placeholder="비밀번호"]').send_keys(Keys.ENTER)
         # or use the javascript action
         #driver.execute_script('$("button.login-button.main").click();')
 
@@ -104,15 +105,15 @@ def fetch_notifications():
         print('[+] wait loading notifications')
         # FIXME use unti
         for x in range(30):
-            sections = driver.find_elements_by_tag_name('section')
+            sections = driver.find_elements(By.TAG_NAME, 'section')
             sections = [
                 section
                 for section in sections
-                if not(len(section.find_elements_by_tag_name('footer')))
+                if not(len(section.find_elements(By.TAG_NAME, 'footer')))
             ]
             if len(sections):
                 section = sections[0]
-                items = section.find_elements_by_css_selector('li')
+                items = section.find_elements(By.CSS_SELECTOR, 'li')
             if len(items):
                 break
             time.sleep(1)
@@ -124,9 +125,9 @@ def fetch_notifications():
 
         for item in items:
             try:
-                url = item.find_element_by_tag_name('a').get_attribute('href')
+                url = item.find_element(By.TAG_NAME, 'a').get_attribute('href')
                 data_id = hashlib.sha1(url.encode()).hexdigest()
-                text = item.find_element_by_tag_name('p').get_attribute('innerHTML')
+                text = item.find_element(By.TAG_NAME, 'p').get_attribute('innerHTML')
                 result.append(dict(data_id=data_id, url=url, message=text))
             except:
                 # FIXME
