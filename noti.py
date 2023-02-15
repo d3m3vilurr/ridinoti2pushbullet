@@ -43,6 +43,9 @@ for x in CONFIG.get('posts', ()):
         senders.append(module.make_sender(x))
     except ModuleNotFoundError:
         print('not support {} yet'.format(post_type))
+    except Exception as e:
+        print('unknown exception: {}'.format(post_type))
+        print(e)
 
 def strip_html(m):
     return html.unescape(TAG_PATTERN.sub('', m)).strip()
@@ -92,6 +95,7 @@ def fetch_notifications():
         for x in range(30):
             time.sleep(1)
             # skip the change pwd page
+            print(driver.current_url)
             if CHANGE_PWD_PAGE_URL in driver.current_url:
                 driver.get(NOTIFICATION_PAGE_URL)
                 continue
@@ -129,11 +133,13 @@ def fetch_notifications():
                 data_id = hashlib.sha1(url.encode()).hexdigest()
                 text = item.find_element(By.TAG_NAME, 'p').get_attribute('innerHTML')
                 result.append(dict(data_id=data_id, url=url, message=text))
-            except:
+            except Exception as e:
+                print(e)
                 # FIXME
                 pass
-    except:
+    except Exception as e:
         # anyway we must close the process
+        print(e)
         driver.quit()
     return result
 
@@ -144,6 +150,7 @@ else:
         PUSHED = [x.strip() for x in r.readlines()]
 
 for noti in reversed(fetch_notifications()):
+    print(noti)
     if not noti:
         continue
     item_id = noti['data_id']
