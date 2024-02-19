@@ -9,14 +9,17 @@ import html
 import hashlib
 from html.parser import HTMLParser
 from pushbullet import PushBullet
-import yaml
 import time
+from urllib.parse import urlparse
+import yaml
 
 HOSTNAME = 'ridibooks.com'
 AUTH_SERVER = 'https://' + HOSTNAME
 MAIN_SERVER = 'https://' + HOSTNAME
-NOTIFICATION_PAGE_URL = MAIN_SERVER + '/notification'
-CHANGE_PWD_PAGE_URL = MAIN_SERVER + '/account/change-password'
+NOTIFICATION_PAGE_PATH = '/notification'
+NOTIFICATION_PAGE_URL = MAIN_SERVER + NOTIFICATION_PAGE_PATH
+CHANGE_PWD_PAGE_PATH = '/account/change-password'
+CHANGE_PWD_PAGE_URL = MAIN_SERVER + CHANGE_PWD_PAGE_PATH
 API_SERVER = 'https://store-api.' + HOSTNAME
 # TODO use selenium
 TOKEN_URL = API_SERVER + '/users/me/notification-token/'
@@ -95,11 +98,13 @@ def fetch_notifications():
         for x in range(30):
             time.sleep(1)
             # skip the change pwd page
+            parsed = urlparse(driver.current_url)
+            #print(driver.current_url, parsed)
             print(driver.current_url)
-            if CHANGE_PWD_PAGE_URL in driver.current_url:
+            if parsed.path == CHANGE_PWD_PAGE_PATH:
                 driver.get(NOTIFICATION_PAGE_URL)
                 continue
-            if driver.current_url == NOTIFICATION_PAGE_URL:
+            if parsed.path == NOTIFICATION_PAGE_PATH:
                 break
         else:
             print("[!] login failed")
@@ -131,8 +136,12 @@ def fetch_notifications():
             try:
                 url = item.find_element(By.TAG_NAME, 'a').get_attribute('href')
                 data_id = hashlib.sha1(url.encode()).hexdigest()
-                text = item.find_element(By.TAG_NAME, 'p').get_attribute('innerHTML')
-                result.append(dict(data_id=data_id, url=url, message=text))
+                title = item.find_element(By.XPATH, './/a/div[2]/div').get_attribute('innerHTML')
+                message = item.find_element(By.XPATH, './/a/div[2]/span').get_attribute('innerHTML')
+                result.append(dict(data_id=data_id,
+                                   url=url,
+                                   title=title,
+                                   message=message))
             except Exception as e:
                 print(e)
                 # FIXME
@@ -156,12 +165,8 @@ for noti in reversed(fetch_notifications()):
     item_id = noti['data_id']
     if item_id in PUSHED:
         continue
-    _ = noti['message'].split('</strong>', 1)
-    if len(_) < 2:
-            _ = ('', _[0])
-    title, message = _
-    title = strip_html(title)
-    message = strip_html(message)
+    title = strip_html(noti['title'])
+    message = strip_html(noti['message'])
     push(title, message, noti.get('url'))
     PUSHED.append(item_id)
 
