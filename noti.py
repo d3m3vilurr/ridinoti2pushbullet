@@ -10,7 +10,7 @@ import hashlib
 from html.parser import HTMLParser
 from pushbullet import PushBullet
 import time
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 import yaml
 
 HOSTNAME = 'ridibooks.com'
@@ -135,6 +135,9 @@ def fetch_notifications():
         for item in items:
             try:
                 url = item.find_element(By.TAG_NAME, 'a').get_attribute('href')
+                # remove query strings
+                parsed = urlparse(url)
+                url = urlunparse(parsed._replace(query=''))
                 data_id = hashlib.sha1(url.encode()).hexdigest()
                 title = item.find_element(By.XPATH, './/a/div[2]/div').get_attribute('innerHTML')
                 message = item.find_element(By.XPATH, './/a/div[2]/span').get_attribute('innerHTML')
